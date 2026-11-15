@@ -149,24 +149,38 @@ class ClipView(HomeAssistantView):
         del body
 
         tmp = path + ".part.mp4"
-        cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", raw,
-               "-map", "0:v:0", "-map", "0:a:0?", "-c:v", "copy",
-               "-c:a", "aac", "-ar", "44100", "-b:a", "64k",
-               "-movflags", "+faststart", tmp]
+        ts = path + ".part.ts"
+        # Bước 1 — MP4 → MPEG-TS (copy): bỏ avcC cũ. Tapo đổi độ phân giải giữa chừng (2K → 720p) mà go2rtc
+        #   vẫn giữ SPS cũ trong header → avcC ghi 2560px nhưng khung hình 1280px. Máy tính đọc SPS trong luồng
+        #   nên vẫn chiếu được; iPhone (VideoToolbox) tin avcC → CHỈ CÓ TIẾNG, KHÔNG CÓ HÌNH.
+        # Bước 2 — TS → MP4: avcC dựng lại từ SPS thật trong luồng; audio → AAC 44.1kHz; +faststart.
+        steps = [
+            ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", raw,
+             "-c", "copy", "-bsf:v", "h264_mp4toannexb", "-f", "mpegts", ts],
+            ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y", "-i", ts,
+             "-map", "0:v:0", "-map", "0:a:0?", "-c:v", "copy",
+             "-c:a", "aac", "-ar", "44100", "-b:a", "64k",
+             "-movflags", "+faststart", tmp],
+        ]
         ok = False
         try:
-            proc = await asyncio.create_subprocess_exec(
-                *cmd, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.PIPE)
-            _, stderr = await asyncio.wait_for(proc.communicate(), timeout=120)
-            ok = proc.returncode == 0 and await self.hass.async_add_executor_job(
-                lambda: os.path.exists(tmp) and os.path.getsize(tmp) > 1024)
-            if not ok:
-                _LOGGER.warning("Camera AI: ffmpeg chuẩn hoá clip %s lỗi: %s", review_id,
-                                stderr.decode(errors="ignore")[-300:])
+            for cmd in steps:
+                proc = await asyncio.create_subprocess_exec(
+                    *cmd, stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.PIPE)
+                _, stderr = await asyncio.wait_for(proc.communicate(), timeout=120)
+                if proc.returncode != 0:
+                    _LOGGER.warning("Camera AI: ffmpeg chuẩn hoá clip %s lỗi: %s", review_id,
+                                    stderr.decode(errors="ignore")[-300:])
+                    break
+            else:
+                ok = await self.hass.async_add_executor_job(
+                    lambda: os.path.exists(tmp) and os.path.getsize(tmp) > 1024)
         except (OSError, asyncio.TimeoutError) as err:
             _LOGGER.warning("Camera AI: không chạy được ffmpeg (%s) — trả clip gốc", err)
 
         def _finish() -> None:
+            if os.path.exists(ts):
+                os.remove(ts)
             if ok:
                 os.replace(tmp, path)
                 os.remove(raw)
