@@ -29,10 +29,10 @@ from homeassistant.util import dt as dt_util
 from . import immich_faces
 from .const import (
     ACTION_SNOOZE, CONF_CAMERA_NAMES, CONF_COOLDOWN, CONF_FACES_PER_PERSON, CONF_FRIGATE_UI,
-    CONF_FRIGATE_URL, CONF_IMMICH_KEY, CONF_IMMICH_UI, CONF_IMMICH_URL, CONF_KNOWN_QUIET,
+    CONF_FRIGATE_URL, CONF_IMMICH_KEY, CONF_IMMICH_APP, CONF_IMMICH_UI, CONF_IMMICH_URL, CONF_KNOWN_QUIET,
     CONF_LABELS, CONF_NAS_LINK, CONF_NIGHT_END, CONF_NIGHT_START, CONF_NOTIFY,
     DEFAULT_COOLDOWN, DEFAULT_FACES_PER_PERSON, DEFAULT_FRIGATE_UI, DEFAULT_FRIGATE_URL,
-    DEFAULT_IMMICH_UI, DEFAULT_IMMICH_URL, DEFAULT_LABELS, DEFAULT_MODE, DEFAULT_NAS_LINK,
+    DEFAULT_IMMICH_APP, DEFAULT_IMMICH_UI, DEFAULT_IMMICH_URL, DEFAULT_LABELS, DEFAULT_MODE, DEFAULT_NAS_LINK,
     DEFAULT_NIGHT_END, DEFAULT_NIGHT_START, DOMAIN, LABEL_VI, MAX_LOG, MODE_ALWAYS,
     MODE_NIGHT, MODE_OFF, MODES, PANEL_PATH,
 )
@@ -80,6 +80,7 @@ class CameraAI:
         self.immich_url = (conf.get(CONF_IMMICH_URL) or DEFAULT_IMMICH_URL).rstrip("/")
         self.immich_ui = (conf.get(CONF_IMMICH_UI) or DEFAULT_IMMICH_UI).rstrip("/")
         self.immich_key = conf.get(CONF_IMMICH_KEY) or ""
+        self.immich_app = conf.get(CONF_IMMICH_APP, DEFAULT_IMMICH_APP) or ""
         self.nas_link = conf.get(CONF_NAS_LINK) or DEFAULT_NAS_LINK
         self.notify_service = conf.get(CONF_NOTIFY) or ""
         self.labels = set(conf.get(CONF_LABELS) or DEFAULT_LABELS)
@@ -402,7 +403,8 @@ class CameraAI:
             "labels": sorted(self.labels),
             "cooldown": self.cooldown,
             "events": self.data.get("events", [])[:150],
-            "links": {"frigate": self.frigate_ui, "immich": self.immich_ui, "nas": self.nas_link},
+            "links": {"frigate": self.frigate_ui, "immich": self.immich_ui, "immich_app": self.immich_app,
+                      "nas": self.nas_link},
             "notify_service": self.notify_service,
             "notify_last": self.notify_last,
             "face_sync": self.data.get("face_sync"),

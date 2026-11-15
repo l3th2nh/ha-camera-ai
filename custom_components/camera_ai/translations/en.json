@@ -11,7 +11,8 @@
           "immich_url": "Immich URL (để đồng bộ khuôn mặt)",
           "immich_api_key": "Immich API key",
           "immich_ui": "Immich — link mở trên trình duyệt",
-          "nas_link": "Link thư mục clip trên NAS"
+          "nas_link": "Link thư mục clip trên NAS",
+          "immich_app": "Immich — mở APP trên điện thoại (để trống = luôn mở web)"
         }
       }
     },
@@ -40,7 +41,8 @@
           "cooldown": "Thời gian chờ giữa 2 thông báo",
           "known_quiet": "Người quen: thông báo im lặng",
           "camera_names": "Tên hiển thị camera (vd san_them=Sân - Thềm)",
-          "faces_per_person": "Số ảnh mặt mỗi người lấy từ Immich"
+          "faces_per_person": "Số ảnh mặt mỗi người lấy từ Immich",
+          "immich_app": "Immich — mở APP trên điện thoại (để trống = luôn mở web)"
         }
       }
     }

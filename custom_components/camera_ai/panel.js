@@ -126,8 +126,20 @@ class CameraAIPanel extends HTMLElement {
     const L = d.links || {};
     this.$("#links").innerHTML = [
       [L.frigate, "🎥 Frigate"], [L.frigate && L.frigate + "/review", "🗂️ Xem lại (Frigate)"], [L.frigate && L.frigate + "/faces", "🙂 Khuôn mặt / Train"],
-      [L.immich && L.immich + "/people", "🖼️ Immich – Mọi người"], [L.nas, "💾 NAS (clip cảnh báo)"], ["/config/integrations/integration/camera_ai", "⚙️ Cài đặt"],
-    ].filter((x) => x[0]).map(([u, t]) => `<a class="btn" href="${esc(u)}" ${u.startsWith("/") ? "" : 'target="_blank" rel="noopener"'}>${t}</a>`).join("");
+      [L.immich && L.immich + "/people", "🖼️ Immich – Mọi người", L.immich_app], [L.nas, "💾 NAS (clip cảnh báo)"], ["/config/integrations/integration/camera_ai", "⚙️ Cài đặt"],
+    ].filter((x) => x[0]).map(([u, t, app]) => `<a class="btn" href="${esc(u)}" ${app ? `data-app="${esc(app)}"` : ""} ${u.startsWith("/") ? "" : 'target="_blank" rel="noopener"'}>${t}</a>`).join("");
+    // Điện thoại: thử mở APP (vd app.immich://) — 1.5s sau trang vẫn hiện (app chưa cài / không mở được) → mở web
+    const mobile = /iPhone|iPad|iPod|Android|Home Assistant/i.test(navigator.userAgent);
+    this.$("#links").querySelectorAll("[data-app]").forEach((a) => (a.onclick = (ev) => {
+      if (!mobile) return;
+      ev.preventDefault();
+      const web = a.getAttribute("href");
+      let left = false;
+      const onHide = () => { left = true; };
+      document.addEventListener("visibilitychange", onHide, { once: true });
+      window.location.href = a.dataset.app;
+      setTimeout(() => { document.removeEventListener("visibilitychange", onHide); if (!left && !document.hidden) window.open(web, "_blank"); }, 1500);
+    }));
     const faces = Object.entries(d.faces || {}).sort((a, b) => a[0].localeCompare(b[0], "vi"));
     this.$("#faces").innerHTML = faces.length ? faces.map(([n, c]) => `<div class="face">${esc(n)}<span>${c}</span></div>`).join("") : '<div class="empty">Chưa có khuôn mặt nào.</div>';
     const fs = d.face_sync;
