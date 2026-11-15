@@ -1,0 +1,40 @@
+# Camera AI — Frigate cho Home Assistant (thông báo · khuôn mặt Immich · nhật ký)
+
+Tích hợp HACS quản lý phần **Frigate** trong Home Assistant:
+
+- 🔔 **Thông báo kèm ảnh** khi Frigate có cảnh báo (người, ô tô, xe máy…), ghi **tên người** nếu nhận ra mặt
+  (`👤 Mẹ Tâm — 21:05`), người lạ thì báo ưu tiên cao (`⚠️ Người lạ — 02:14`). Nhận ra mặt muộn → thông báo được
+  **thay bằng tên đúng** (cùng `tag`).
+- 🎚️ **Chế độ thông báo** (entity `select.camera_ai_che_do_thong_bao` + panel):
+  **Mọi lúc · Chỉ ban đêm · Khi vắng nhà · Ban đêm hoặc vắng nhà · Tắt**, kèm **tạm tắt 1h/4h** (cả nút ngay trong
+  thông báo) và thời gian chờ giữa 2 lần báo.
+- 🙂 **Đồng bộ khuôn mặt từ Immich**: lấy ảnh mặt rõ nhất của các người **có tên** trong Immich → nạp vào thư viện
+  face recognition của Frigate (nút / dịch vụ `camera_ai.sync_faces`).
+- 🗂️ **Panel "Camera AI"** trên sidebar: xem trực tiếp, chế độ, nhật ký cảnh báo kèm ảnh (đã báo / lý do không báo),
+  thư viện khuôn mặt, liên kết nhanh tới Frigate · Immich · NAS.
+
+## Yêu cầu
+- Frigate ≥ 0.14 (đã thử 0.18) có MQTT, bật `face_recognition` nếu muốn gắn tên.
+- Tích hợp **Frigate** (HACS `blakeblackshear/frigate-hass-integration`) — dùng proxy ảnh thông báo của nó.
+- MQTT trong HA, app **Home Assistant Companion** để nhận thông báo.
+- (Tùy chọn) Immich + API key (quyền đọc người & ảnh).
+
+## Cài đặt
+1. HACS → ⋮ → *Custom repositories* → `https://github.com/l3th2nh/ha-camera-ai` (Integration) → Download.
+2. Khởi động lại HA → *Cài đặt → Thiết bị & dịch vụ → Thêm tích hợp → Camera AI*.
+3. Nhập Frigate API (`http://<frigate>:5000`), link giao diện Frigate, dịch vụ notify, Immich URL + API key.
+4. *Cấu hình* (Options): loại đối tượng cần báo, giờ đêm, người tính "vắng nhà" (trống = `zone.home`),
+   thời gian chờ, tên hiển thị camera (`san_them=Sân - Thềm`), số ảnh mặt mỗi người.
+
+## Dịch vụ
+| Dịch vụ | Mô tả |
+|---|---|
+| `camera_ai.set_mode` | Đặt chế độ thông báo |
+| `camera_ai.snooze` | Tạm tắt N phút (`0` = bật lại) |
+| `camera_ai.sync_faces` | Đồng bộ mặt từ Immich (`people`, `per_person` tùy chọn) |
+| `camera_ai.test_notify` | Gửi thông báo thử |
+
+## Ghi chú
+- Ảnh trong Immich là ảnh điện thoại (chính diện, đủ sáng) — camera an ninh nhìn từ trên xuống / hồng ngoại ban đêm
+  khác nhiều. Nên bổ sung vài ảnh mặt từ chính camera qua tab **Faces → Train** của Frigate.
+- Không lưu mật khẩu trong repo; API key Immich nằm trong config entry của HA.

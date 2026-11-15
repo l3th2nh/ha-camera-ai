@@ -1,0 +1,13 @@
+{
+  "domain": "camera_ai",
+  "name": "Camera AI (Frigate)",
+  "version": "0.1.0",
+  "documentation": "https://github.com/l3th2nh/ha-camera-ai",
+  "issue_tracker": "https://github.com/l3th2nh/ha-camera-ai/issues",
+  "dependencies": ["http", "websocket_api", "frontend", "panel_custom", "mqtt"],
+  "after_dependencies": ["frigate", "mobile_app"],
+  "requirements": ["Pillow>=10.0.0"],
+  "codeowners": ["@l3th2nh"],
+  "iot_class": "local_push",
+  "config_flow": true
+}

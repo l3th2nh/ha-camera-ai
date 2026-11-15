@@ -1,0 +1,89 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Camera AI (Frigate)",
+        "description": "Kết nối Frigate, Immich và kênh thông báo.",
+        "data": {
+          "frigate_url": "Frigate API (nội bộ, không auth)",
+          "frigate_ui": "Frigate giao diện web",
+          "notify_service": "Dịch vụ thông báo",
+          "immich_url": "Immich URL (để đồng bộ khuôn mặt)",
+          "immich_api_key": "Immich API key",
+          "immich_ui": "Immich — link mở trên trình duyệt",
+          "nas_link": "Link thư mục clip trên NAS"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Không kết nối được Frigate API"
+    },
+    "abort": {
+      "single_instance_allowed": "Đã cài Camera AI rồi"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Cài đặt Camera AI",
+        "data": {
+          "frigate_url": "Frigate API (nội bộ, không auth)",
+          "frigate_ui": "Frigate giao diện web",
+          "notify_service": "Dịch vụ thông báo",
+          "immich_url": "Immich URL (để đồng bộ khuôn mặt)",
+          "immich_api_key": "Immich API key",
+          "immich_ui": "Immich — link mở trên trình duyệt",
+          "nas_link": "Link thư mục clip trên NAS",
+          "labels": "Báo khi thấy",
+          "persons": "Người tính 'vắng nhà' (trống = dùng zone.home)",
+          "night_start": "Ban đêm bắt đầu",
+          "night_end": "Ban đêm kết thúc",
+          "cooldown": "Thời gian chờ giữa 2 thông báo",
+          "known_quiet": "Người quen: thông báo im lặng",
+          "camera_names": "Tên hiển thị camera (vd san_them=Sân - Thềm)",
+          "faces_per_person": "Số ảnh mặt mỗi người lấy từ Immich"
+        }
+      }
+    }
+  },
+  "services": {
+    "sync_faces": {
+      "name": "Đồng bộ khuôn mặt từ Immich",
+      "description": "Nạp ảnh mặt của người có tên trong Immich vào thư viện Frigate.",
+      "fields": {
+        "people": {
+          "name": "Chỉ những người",
+          "description": "Bỏ trống = tất cả người có tên"
+        },
+        "per_person": {
+          "name": "Số ảnh mỗi người",
+          "description": "Mặc định theo cài đặt"
+        }
+      }
+    },
+    "snooze": {
+      "name": "Tạm tắt thông báo",
+      "description": "Tạm tắt trong N phút (0 = bật lại).",
+      "fields": {
+        "minutes": {
+          "name": "Số phút",
+          "description": "0 để bật lại"
+        }
+      }
+    },
+    "set_mode": {
+      "name": "Đặt chế độ thông báo",
+      "description": "Mọi lúc / Chỉ ban đêm / Khi vắng nhà / Ban đêm hoặc vắng nhà / Tắt",
+      "fields": {
+        "mode": {
+          "name": "Chế độ",
+          "description": "Chế độ thông báo"
+        }
+      }
+    },
+    "test_notify": {
+      "name": "Gửi thông báo thử",
+      "description": "Kiểm tra kênh thông báo."
+    }
+  }
+}

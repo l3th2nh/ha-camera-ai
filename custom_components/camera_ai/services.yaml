@@ -1,0 +1,34 @@
+sync_faces:
+  fields:
+    people:
+      example: '["Mẹ Tâm", "Tôi"]'
+      selector:
+        object:
+    per_person:
+      example: 15
+      selector:
+        number:
+          min: 1
+          max: 60
+snooze:
+  fields:
+    minutes:
+      default: 60
+      selector:
+        number:
+          min: 0
+          max: 1440
+          unit_of_measurement: phút
+set_mode:
+  fields:
+    mode:
+      required: true
+      selector:
+        select:
+          options:
+            - "Mọi lúc"
+            - "Chỉ ban đêm"
+            - "Khi vắng nhà"
+            - "Ban đêm hoặc vắng nhà"
+            - "Tắt"
+test_notify:
