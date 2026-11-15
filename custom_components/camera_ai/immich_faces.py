@@ -36,6 +36,7 @@ class SyncResult:
     skipped: int = 0
     failed: int = 0
     per_person: dict[str, int] = field(default_factory=dict)
+    ids: dict[str, str] = field(default_factory=dict)   # tên → Immich person id
     errors: list[str] = field(default_factory=list)
 
 
@@ -181,6 +182,7 @@ async def sync_faces(
 
     for person in people:
         pid, name = person["id"], person["name"].strip()
+        res.ids[name] = pid
         have = done.setdefault(pid, [])
         in_frigate = len(library.get(frigate_name(name), []))
         need = per_person - in_frigate

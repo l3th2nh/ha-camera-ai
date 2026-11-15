@@ -39,7 +39,7 @@ h2{font-size:14px;margin:0 0 10px;color:var(--muted);font-weight:600;letter-spac
 .btn:hover{border-color:var(--accent)} .btn.danger{color:var(--bad)}
 .btn[disabled]{opacity:.5;cursor:wait}
 .faces{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
-.face{background:var(--panel-2);border-radius:10px;padding:8px 10px;font-size:13px;display:flex;justify-content:space-between;gap:6px}
+.face{color:var(--text);text-decoration:none;background:var(--panel-2);border-radius:10px;padding:8px 10px;font-size:13px;display:flex;justify-content:space-between;gap:6px}
 .face span{color:var(--faint);font-family:var(--mono)}
 .prog{font-family:var(--mono);font-size:12px;color:var(--faint);margin-top:8px;white-space:pre-wrap}
 .ev{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
@@ -124,24 +124,26 @@ class CameraAIPanel extends HTMLElement {
     const nl = d.notify_last;
     this.$("#nerr").textContent = nl && !nl.ok ? `Thông báo gần nhất lỗi: ${nl.err || ""}` : (d.notify_service ? "" : "Chưa chọn dịch vụ thông báo (Cài đặt).");
     const L = d.links || {};
+    // Điện thoại có app Immich → link immich:// (thẻ <a> thường, iOS chỉ mở app khi là cú chạm trực tiếp)
+    const mobile = /iPhone|iPad|iPod|Android|Home Assistant/i.test(navigator.userAgent);
+    const useApp = mobile && !!L.immich_app;
+    const linkAttrs = (u) => /^(https?:)?\/\//i.test(u) ? `href="${esc(u)}" target="_blank" rel="noopener"` : `href="${esc(u)}"`;
+    const personUrl = (id) => !id ? "" : useApp ? `${L.immich_app.split(":")[0]}://people?id=${encodeURIComponent(id)}`
+      : L.immich ? `${L.immich}/people/${encodeURIComponent(id)}` : "";
+    this._personUrl = personUrl; this._linkAttrs = linkAttrs;
     this.$("#links").innerHTML = [
       [L.frigate, "🎥 Frigate"], [L.frigate && L.frigate + "/review", "🗂️ Xem lại (Frigate)"], [L.frigate && L.frigate + "/faces", "🙂 Khuôn mặt / Train"],
-      [L.immich && L.immich + "/people", "🖼️ Immich – Mọi người", L.immich_app], [L.nas, "💾 NAS (clip cảnh báo)"], ["/config/integrations/integration/camera_ai", "⚙️ Cài đặt"],
-    ].filter((x) => x[0]).map(([u, t, app]) => `<a class="btn" href="${esc(u)}" ${app ? `data-app="${esc(app)}"` : ""} ${u.startsWith("/") ? "" : 'target="_blank" rel="noopener"'}>${t}</a>`).join("");
-    // Điện thoại: thử mở APP (vd app.immich://) — 1.5s sau trang vẫn hiện (app chưa cài / không mở được) → mở web
-    const mobile = /iPhone|iPad|iPod|Android|Home Assistant/i.test(navigator.userAgent);
-    this.$("#links").querySelectorAll("[data-app]").forEach((a) => (a.onclick = (ev) => {
-      if (!mobile) return;
-      ev.preventDefault();
-      const web = a.getAttribute("href");
-      let left = false;
-      const onHide = () => { left = true; };
-      document.addEventListener("visibilitychange", onHide, { once: true });
-      window.location.href = a.dataset.app;
-      setTimeout(() => { document.removeEventListener("visibilitychange", onHide); if (!left && !document.hidden) window.open(web, "_blank"); }, 1500);
-    }));
+      ...(useApp
+        ? [[L.immich_app, "🖼️ Immich (app)"], [L.immich && L.immich + "/people", "🌐 Immich web"]]
+        : [[L.immich && L.immich + "/people", "🖼️ Immich – Mọi người"]]),
+      [L.nas, "💾 NAS (clip cảnh báo)"], ["/config/integrations/integration/camera_ai", "⚙️ Cài đặt"],
+    ].filter((x) => x[0]).map(([u, t]) => `<a class="btn" ${linkAttrs(u)}>${t}</a>`).join("");
     const faces = Object.entries(d.faces || {}).sort((a, b) => a[0].localeCompare(b[0], "vi"));
-    this.$("#faces").innerHTML = faces.length ? faces.map(([n, c]) => `<div class="face">${esc(n)}<span>${c}</span></div>`).join("") : '<div class="empty">Chưa có khuôn mặt nào.</div>';
+    const ppl = d.immich_people || {};
+    this.$("#faces").innerHTML = faces.length ? faces.map(([n, c]) => {
+      const u = personUrl(ppl[n]);
+      return u ? `<a class="face" ${linkAttrs(u)}>${esc(n)}<span>${c} ›</span></a>` : `<div class="face">${esc(n)}<span>${c}</span></div>`;
+    }).join("") : '<div class="empty">Chưa có khuôn mặt nào.</div>';
     const fs = d.face_sync;
     this.$("#sync").disabled = !!d.sync_running;
     this.$("#sync").textContent = d.sync_running ? "⏳ Đang đồng bộ…" : "🔄 Đồng bộ từ Immich";

@@ -81,6 +81,8 @@ class CameraAI:
         self.immich_ui = (conf.get(CONF_IMMICH_UI) or DEFAULT_IMMICH_UI).rstrip("/")
         self.immich_key = conf.get(CONF_IMMICH_KEY) or ""
         self.immich_app = conf.get(CONF_IMMICH_APP, DEFAULT_IMMICH_APP) or ""
+        if self.immich_app.startswith("app.immich:"):  # v0.2.1 dùng nhầm scheme OAuth
+            self.immich_app = DEFAULT_IMMICH_APP
         self.nas_link = conf.get(CONF_NAS_LINK) or DEFAULT_NAS_LINK
         self.notify_service = conf.get(CONF_NOTIFY) or ""
         self.labels = set(conf.get(CONF_LABELS) or DEFAULT_LABELS)
@@ -377,6 +379,7 @@ class CameraAI:
                 only=only, done=self.data.get("face_done") or {}, progress=progress,
             )
             self.data["face_done"] = done
+            self.data["immich_people"] = {**self.data.get("immich_people", {}), **res.ids}
             summary = {"at": started, "ok": True, "people": res.people, "added": res.added,
                        "skipped": res.skipped, "failed": res.failed, "errors": res.errors[:10]}
         except (aiohttp.ClientError, asyncio.TimeoutError, RuntimeError) as err:
@@ -411,4 +414,5 @@ class CameraAI:
             "sync_running": self.sync_running,
             "sync_progress": self.sync_progress[-8:],
             "faces_per_person": self.faces_per_person,
+            "immich_people": self.data.get("immich_people", {}),
         }
