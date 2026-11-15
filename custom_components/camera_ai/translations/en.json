@@ -35,7 +35,6 @@
           "immich_ui": "Immich — link mở trên trình duyệt",
           "nas_link": "Link thư mục clip trên NAS",
           "labels": "Báo khi thấy",
-          "persons": "Người tính 'vắng nhà' (trống = dùng zone.home)",
           "night_start": "Ban đêm bắt đầu",
           "night_end": "Ban đêm kết thúc",
           "cooldown": "Thời gian chờ giữa 2 thông báo",
@@ -73,7 +72,7 @@
     },
     "set_mode": {
       "name": "Đặt chế độ thông báo",
-      "description": "Mọi lúc / Chỉ ban đêm / Khi vắng nhà / Ban đêm hoặc vắng nhà / Tắt",
+      "description": "Mọi lúc / Chỉ ban đêm / Tắt",
       "fields": {
         "mode": {
           "name": "Chế độ",

@@ -1,4 +1,4 @@
-"""Select: chế độ thông báo (Mọi lúc / Chỉ ban đêm / Khi vắng nhà / Ban đêm hoặc vắng nhà / Tắt)."""
+"""Select: chế độ thông báo (Mọi lúc / Chỉ ban đêm / Tắt)."""
 from __future__ import annotations
 
 from homeassistant.components.select import SelectEntity
@@ -40,7 +40,6 @@ class ModeSelect(SelectEntity):
             "dang_bao": allowed,
             "ly_do_chan": reason or None,
             "ban_dem": self._rt.is_night(),
-            "vang_nha": self._rt.is_away(),
             "tam_tat_den": snooze.isoformat() if snooze else None,
         }
 

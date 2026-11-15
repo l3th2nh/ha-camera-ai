@@ -1,4 +1,4 @@
-"""Config flow Camera AI: kết nối Frigate/Immich + kênh thông báo; Options: lọc, giờ đêm, vắng nhà..."""
+"""Config flow Camera AI: kết nối Frigate/Immich + kênh thông báo; Options: lọc, giờ đêm..."""
 from __future__ import annotations
 
 import aiohttp
@@ -12,7 +12,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .const import (
     ALL_LABELS, CONF_CAMERA_NAMES, CONF_COOLDOWN, CONF_FACES_PER_PERSON, CONF_FRIGATE_UI,
     CONF_FRIGATE_URL, CONF_IMMICH_KEY, CONF_IMMICH_UI, CONF_IMMICH_URL, CONF_KNOWN_QUIET,
-    CONF_LABELS, CONF_NAS_LINK, CONF_NIGHT_END, CONF_NIGHT_START, CONF_NOTIFY, CONF_PERSONS,
+    CONF_LABELS, CONF_NAS_LINK, CONF_NIGHT_END, CONF_NIGHT_START, CONF_NOTIFY,
     DEFAULT_COOLDOWN, DEFAULT_FACES_PER_PERSON, DEFAULT_FRIGATE_UI, DEFAULT_FRIGATE_URL,
     DEFAULT_IMMICH_UI, DEFAULT_IMMICH_URL, DEFAULT_LABELS, DEFAULT_NAS_LINK, DEFAULT_NIGHT_END,
     DEFAULT_NIGHT_START, DOMAIN, LABEL_VI,
@@ -92,9 +92,6 @@ class CameraAIOptionsFlow(config_entries.OptionsFlow):
                     options=[selector.SelectOptionDict(value=k, label=LABEL_VI[k]) for k in ALL_LABELS],
                     multiple=True, mode=selector.SelectSelectorMode.LIST,
                 )
-            ),
-            vol.Optional(CONF_PERSONS, default=cur.get(CONF_PERSONS, [])): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="person", multiple=True)
             ),
             vol.Optional(CONF_NIGHT_START, default=cur.get(CONF_NIGHT_START, DEFAULT_NIGHT_START)): selector.TimeSelector(),
             vol.Optional(CONF_NIGHT_END, default=cur.get(CONF_NIGHT_END, DEFAULT_NIGHT_END)): selector.TimeSelector(),

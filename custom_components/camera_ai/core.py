@@ -30,11 +30,11 @@ from . import immich_faces
 from .const import (
     ACTION_SNOOZE, CONF_CAMERA_NAMES, CONF_COOLDOWN, CONF_FACES_PER_PERSON, CONF_FRIGATE_UI,
     CONF_FRIGATE_URL, CONF_IMMICH_KEY, CONF_IMMICH_UI, CONF_IMMICH_URL, CONF_KNOWN_QUIET,
-    CONF_LABELS, CONF_NAS_LINK, CONF_NIGHT_END, CONF_NIGHT_START, CONF_NOTIFY, CONF_PERSONS,
+    CONF_LABELS, CONF_NAS_LINK, CONF_NIGHT_END, CONF_NIGHT_START, CONF_NOTIFY,
     DEFAULT_COOLDOWN, DEFAULT_FACES_PER_PERSON, DEFAULT_FRIGATE_UI, DEFAULT_FRIGATE_URL,
     DEFAULT_IMMICH_UI, DEFAULT_IMMICH_URL, DEFAULT_LABELS, DEFAULT_MODE, DEFAULT_NAS_LINK,
-    DEFAULT_NIGHT_END, DEFAULT_NIGHT_START, DOMAIN, LABEL_VI, MAX_LOG, MODE_ALWAYS, MODE_AWAY,
-    MODE_NIGHT, MODE_NIGHT_OR_AWAY, MODE_OFF, MODES, PANEL_PATH,
+    DEFAULT_NIGHT_END, DEFAULT_NIGHT_START, DOMAIN, LABEL_VI, MAX_LOG, MODE_ALWAYS,
+    MODE_NIGHT, MODE_OFF, MODES, PANEL_PATH,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -83,7 +83,6 @@ class CameraAI:
         self.nas_link = conf.get(CONF_NAS_LINK) or DEFAULT_NAS_LINK
         self.notify_service = conf.get(CONF_NOTIFY) or ""
         self.labels = set(conf.get(CONF_LABELS) or DEFAULT_LABELS)
-        self.persons = list(conf.get(CONF_PERSONS) or [])
         self.night_start = _parse_time(conf.get(CONF_NIGHT_START), DEFAULT_NIGHT_START)
         self.night_end = _parse_time(conf.get(CONF_NIGHT_END), DEFAULT_NIGHT_END)
         self.cooldown = float(conf.get(CONF_COOLDOWN, DEFAULT_COOLDOWN) or 0)
@@ -177,17 +176,6 @@ class CameraAI:
         s, e = self.night_start, self.night_end
         return (s <= t or t < e) if s > e else (s <= t < e)
 
-    def is_away(self) -> bool:
-        if self.persons:
-            states = [self.hass.states.get(p) for p in self.persons]
-            known = [s for s in states if s is not None]
-            return bool(known) and all(s.state != "home" for s in known)
-        home = self.hass.states.get("zone.home")
-        try:
-            return home is not None and int(float(home.state)) == 0
-        except ValueError:
-            return False
-
     def mode_allows(self) -> tuple[bool, str]:
         m = self.mode
         if m == MODE_OFF:
@@ -196,13 +184,9 @@ class CameraAI:
             return False, "đang tạm tắt"
         if m == MODE_ALWAYS:
             return True, ""
-        night, away = self.is_night(), self.is_away()
         if m == MODE_NIGHT:
-            return night, "" if night else "không phải ban đêm"
-        if m == MODE_AWAY:
-            return away, "" if away else "có người ở nhà"
-        if m == MODE_NIGHT_OR_AWAY:
-            return night or away, "" if (night or away) else "ban ngày & có người ở nhà"
+            night = self.is_night()
+            return night, "" if night else "ban ngày"
         return True, ""
 
     # ---------------- sự kiện Frigate ----------------
@@ -413,9 +397,7 @@ class CameraAI:
             "allowed_now": allowed,
             "blocked_reason": reason,
             "is_night": self.is_night(),
-            "is_away": self.is_away(),
             "night": f"{self.night_start:%H:%M}–{self.night_end:%H:%M}",
-            "persons": self.persons,
             "snooze_until": snooze.isoformat() if snooze else None,
             "labels": sorted(self.labels),
             "cooldown": self.cooldown,

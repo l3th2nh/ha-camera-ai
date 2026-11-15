@@ -10,7 +10,6 @@ CONF_IMMICH_KEY = "immich_api_key"
 CONF_IMMICH_UI = "immich_ui"              # link mở ảnh, vd https://photos.bkascript.com
 CONF_NAS_LINK = "nas_link"                # link thư mục clip trên NAS
 CONF_LABELS = "labels"
-CONF_PERSONS = "persons"                  # person.* dùng để xét "vắng nhà"
 CONF_NIGHT_START = "night_start"
 CONF_NIGHT_END = "night_end"
 CONF_COOLDOWN = "cooldown"                # giây giữa 2 thông báo của cùng camera
@@ -37,11 +36,9 @@ DEFAULT_FACES_PER_PERSON = 15
 # --- chế độ thông báo (select entity) ---
 MODE_ALWAYS = "Mọi lúc"
 MODE_NIGHT = "Chỉ ban đêm"
-MODE_AWAY = "Khi vắng nhà"
-MODE_NIGHT_OR_AWAY = "Ban đêm hoặc vắng nhà"
 MODE_OFF = "Tắt"
-MODES = [MODE_ALWAYS, MODE_NIGHT, MODE_AWAY, MODE_NIGHT_OR_AWAY, MODE_OFF]
-DEFAULT_MODE = MODE_NIGHT_OR_AWAY
+MODES = [MODE_ALWAYS, MODE_NIGHT, MODE_OFF]
+DEFAULT_MODE = MODE_NIGHT
 
 # --- nút trong thông báo ---
 ACTION_SNOOZE = "CAMERA_AI_SNOOZE_60"

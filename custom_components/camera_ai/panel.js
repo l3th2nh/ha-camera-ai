@@ -1,7 +1,7 @@
 /*
  * Camera AI — panel sidebar (native HA, Shadow DOM).
  *   · Xem trực tiếp (ảnh camera làm mới 2s)
- *   · Chế độ thông báo: Mọi lúc / Chỉ ban đêm / Khi vắng nhà / Ban đêm hoặc vắng nhà / Tắt + tạm tắt
+ *   · Chế độ thông báo: Mọi lúc / Chỉ ban đêm / Tắt + tạm tắt
  *   · Liên kết: Frigate · Immich · NAS · Cài đặt
  *   · Thư viện khuôn mặt (Frigate) + đồng bộ từ Immich
  *   · Nhật ký cảnh báo kèm ảnh, tên người, đã báo / lý do không báo
@@ -119,7 +119,6 @@ class CameraAIPanel extends HTMLElement {
     this.$("#modes").querySelectorAll("[data-m]").forEach((b) => (b.onclick = () => this._ws("camera_ai/set_mode", { mode: b.dataset.m })));
     this.$("#status").innerHTML = `<span>Hiện tại: <b class="${d.allowed_now ? "ok" : "no"}">${d.allowed_now ? "ĐANG BÁO" : "KHÔNG BÁO"}</b></span>
       <span>🌙 Đêm ${esc(d.night)}: <b>${d.is_night ? "đang là đêm" : "ban ngày"}</b></span>
-      <span>🏠 ${d.is_away ? "<b>Vắng nhà</b>" : "Có người ở nhà"}</span>
       ${snz ? `<span>🔕 Tạm tắt tới <b>${snz.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })}</b></span>` : ""}
       <span>Báo khi thấy: ${d.labels.map((l) => LBL[l] || l).join(", ")}</span>`;
     const nl = d.notify_last;

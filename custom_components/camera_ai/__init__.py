@@ -1,7 +1,7 @@
 """Camera AI — quản lý Frigate trong Home Assistant.
 
 - Thông báo kèm ảnh khi Frigate có cảnh báo (người/xe...), lọc theo CHẾ ĐỘ:
-  Mọi lúc · Chỉ ban đêm · Khi vắng nhà · Ban đêm hoặc vắng nhà · Tắt  (select entity + panel)
+  Mọi lúc · Chỉ ban đêm · Tắt  (select entity + panel)
 - Gắn tên người nhờ face recognition của Frigate; thư viện mặt nạp từ Immich (People có tên).
 - Panel "Camera AI" trên sidebar: xem trực tiếp, nhật ký cảnh báo kèm ảnh, chế độ, tạm tắt,
   thư viện khuôn mặt, các liên kết (Frigate, Immich, NAS).
@@ -27,7 +27,7 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [Platform.SELECT, Platform.BUTTON]
 PANEL_URL = "/camera_ai/panel.js"
-PANEL_VER = "1"  # tăng mỗi lần sửa panel.js (chống cache)
+PANEL_VER = "2"  # tăng mỗi lần sửa panel.js (chống cache)
 
 
 def _rt(hass: HomeAssistant) -> CameraAI | None:

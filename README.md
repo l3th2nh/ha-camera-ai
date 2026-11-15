@@ -6,7 +6,7 @@ Tích hợp HACS quản lý phần **Frigate** trong Home Assistant:
   (`👤 Mẹ Tâm — 21:05`), người lạ thì báo ưu tiên cao (`⚠️ Người lạ — 02:14`). Nhận ra mặt muộn → thông báo được
   **thay bằng tên đúng** (cùng `tag`).
 - 🎚️ **Chế độ thông báo** (entity `select.camera_ai_che_do_thong_bao` + panel):
-  **Mọi lúc · Chỉ ban đêm · Khi vắng nhà · Ban đêm hoặc vắng nhà · Tắt**, kèm **tạm tắt 1h/4h** (cả nút ngay trong
+  **Mọi lúc · Chỉ ban đêm · Tắt**, kèm **tạm tắt 1h/4h** (cả nút ngay trong
   thông báo) và thời gian chờ giữa 2 lần báo.
 - 🙂 **Đồng bộ khuôn mặt từ Immich**: lấy ảnh mặt rõ nhất của các người **có tên** trong Immich → nạp vào thư viện
   face recognition của Frigate (nút / dịch vụ `camera_ai.sync_faces`).
@@ -23,8 +23,7 @@ Tích hợp HACS quản lý phần **Frigate** trong Home Assistant:
 1. HACS → ⋮ → *Custom repositories* → `https://github.com/l3th2nh/ha-camera-ai` (Integration) → Download.
 2. Khởi động lại HA → *Cài đặt → Thiết bị & dịch vụ → Thêm tích hợp → Camera AI*.
 3. Nhập Frigate API (`http://<frigate>:5000`), link giao diện Frigate, dịch vụ notify, Immich URL + API key.
-4. *Cấu hình* (Options): loại đối tượng cần báo, giờ đêm, người tính "vắng nhà" (trống = `zone.home`),
-   thời gian chờ, tên hiển thị camera (`san_them=Sân - Thềm`), số ảnh mặt mỗi người.
+4. *Cấu hình* (Options): loại đối tượng cần báo, giờ đêm, thời gian chờ, tên hiển thị camera (`san_them=Sân - Thềm`), số ảnh mặt mỗi người.
 
 ## Dịch vụ
 | Dịch vụ | Mô tả |
