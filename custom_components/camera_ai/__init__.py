@@ -27,7 +27,7 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [Platform.SELECT, Platform.BUTTON]
 PANEL_URL = "/camera_ai/panel.js"
-PANEL_VER = "4"  # tăng mỗi lần sửa panel.js (chống cache)
+PANEL_VER = "5"  # tăng mỗi lần sửa panel.js (chống cache)
 
 
 def _rt(hass: HomeAssistant) -> CameraAI | None:

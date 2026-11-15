@@ -127,7 +127,9 @@ class CameraAIPanel extends HTMLElement {
     // Điện thoại có app Immich → link immich:// (thẻ <a> thường, iOS chỉ mở app khi là cú chạm trực tiếp)
     const mobile = /iPhone|iPad|iPod|Android|Home Assistant/i.test(navigator.userAgent);
     const useApp = mobile && !!L.immich_app;
-    const linkAttrs = (u) => /^(https?:)?\/\//i.test(u) ? `href="${esc(u)}" target="_blank" rel="noopener"` : `href="${esc(u)}"`;
+    // Link ngoài HA (http… hoặc immich://) PHẢI có target=_blank: app HA iOS chỉ chuyển link sang Safari/app khác
+    // qua nhánh "mở cửa sổ mới" (createWebViewWith → openURLInBrowser → UIApplication.open). Link cùng khung bị bỏ qua.
+    const linkAttrs = (u) => u.startsWith("/") && !u.startsWith("//") ? `href="${esc(u)}"` : `href="${esc(u)}" target="_blank" rel="noopener"`;
     const personUrl = (id) => !id ? "" : useApp ? `${L.immich_app.split(":")[0]}://people?id=${encodeURIComponent(id)}`
       : L.immich ? `${L.immich}/people/${encodeURIComponent(id)}` : "";
     this._personUrl = personUrl; this._linkAttrs = linkAttrs;
