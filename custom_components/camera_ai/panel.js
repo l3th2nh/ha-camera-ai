@@ -52,6 +52,19 @@ h2{font-size:14px;margin:0 0 10px;color:var(--muted);font-weight:600;letter-spac
 .day{margin:14px 0 4px;font-size:12px;color:var(--faint);font-family:var(--mono)}
 .empty{color:var(--faint);font-size:13px;padding:8px 0}
 .err{color:var(--bad);font-size:12.5px;margin-top:6px}
+.tabs{display:flex;gap:6px;margin:0 0 12px;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:4px}
+.tab{flex:1;padding:9px 0;text-align:center;border-radius:10px;font-size:14px;cursor:pointer;color:var(--muted);border:0;background:none;font-family:inherit}
+.tab.on{background:var(--panel-2);color:var(--text);font-weight:600}
+[hidden]{display:none!important}
+.rec{display:flex;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
+.rec img{width:120px;height:68px;object-fit:cover;border-radius:9px;background:var(--panel-2);flex:none}
+.rec .t{font-family:var(--mono);font-size:13px;color:var(--muted)} .rec .d{font-size:14.5px;font-weight:600;margin:2px 0}
+.rec .play{margin-left:auto;font-size:22px;color:var(--accent)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.86);z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px}
+.modal video{width:100%;max-width:960px;max-height:70vh;background:#000;border-radius:12px}
+.modal .mt{color:var(--text);font-size:14px;margin:10px 0;text-align:center}
+.modal .row{justify-content:center}
+.modal .x{position:absolute;top:calc(env(safe-area-inset-top) + 12px);right:14px;font-size:26px;color:#fff;cursor:pointer;background:none;border:0}
 </style>`;
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -69,6 +82,8 @@ class CameraAIPanel extends HTMLElement {
     this.attachShadow({ mode: "open" });
     this.shadowRoot.innerHTML = STYLE + `<div class="wrap">
       <div class="top"><div class="menu" id="menu">☰</div><div><h1>Camera AI</h1><div class="sub" id="sub">Đang tải…</div></div></div>
+      <div class="tabs"><button class="tab on" data-tab="home">Tổng quan</button><button class="tab" data-tab="rec">🎬 Xem lại</button></div>
+      <div id="tab-home">
       <div class="card"><div class="live"><img id="live" alt=""><div class="tag" id="camtag"></div></div><div class="camsel" id="camsel"></div></div>
       <div class="card"><h2>Chế độ thông báo</h2><div class="chips" id="modes"></div><div class="status" id="status"></div>
         <div class="row"><button class="btn" data-snz="60">🔕 Tạm tắt 1 giờ</button><button class="btn" data-snz="240">🔕 4 giờ</button>
@@ -78,13 +93,32 @@ class CameraAIPanel extends HTMLElement {
       <div class="card"><h2>Thư viện khuôn mặt (Frigate)</h2><div class="faces" id="faces"></div>
         <div class="row"><button class="btn" id="sync">🔄 Đồng bộ từ Immich</button></div><div class="prog" id="prog"></div></div>
       <div class="card"><h2 style="display:flex;justify-content:space-between">Nhật ký cảnh báo <a class="btn danger" id="clear" style="padding:3px 9px">Xoá</a></h2><div id="events"></div></div>
-    </div>`;
+      </div>
+      <div id="tab-rec" hidden>
+        <div class="card"><div class="chips" id="recf">
+          <button class="chip on" data-sev="alert">Cảnh báo</button><button class="chip" data-sev="detection">Phát hiện</button><button class="chip" data-sev="all">Tất cả</button></div>
+          <div id="reclist" style="margin-top:8px"></div>
+          <div class="row" style="justify-content:center"><button class="btn" id="recmore" hidden>Tải thêm</button></div>
+          <div class="err" id="recerr"></div></div>
+      </div>
+    </div>
+    <div class="modal" id="modal" hidden><button class="x" id="mclose">✕</button>
+      <video id="mvideo" controls playsinline preload="auto"></video><div class="mt" id="mtitle"></div>
+      <div class="row"><a class="btn" id="mdl" download>⬇️ Tải về</a><a class="btn" id="mfr" target="_blank" rel="noopener">🎥 Mở trong Frigate</a></div></div>`;
     this.$ = (s) => this.shadowRoot.querySelector(s);
     this.$("#menu").onclick = () => this.dispatchEvent(new CustomEvent("hass-toggle-menu", { bubbles: true, composed: true }));
     this.shadowRoot.querySelectorAll("[data-snz]").forEach((b) => (b.onclick = () => this._ws("camera_ai/snooze", { minutes: +b.dataset.snz })));
     this.$("#test").onclick = async () => { const r = await this._ws("camera_ai/test_notify"); this.$("#nerr").textContent = r && !r.ok ? "Lỗi: " + (r.err || "") : "Đã gửi ✔"; };
     this.$("#sync").onclick = () => this._ws("camera_ai/sync_faces");
     this.$("#clear").onclick = () => confirm("Xoá toàn bộ nhật ký?") && this._ws("camera_ai/clear_log");
+    this.shadowRoot.querySelectorAll("[data-tab]").forEach((b) => (b.onclick = () => this._tab(b.dataset.tab)));
+    this.shadowRoot.querySelectorAll("[data-sev]").forEach((b) => (b.onclick = () => {
+      this.shadowRoot.querySelectorAll("[data-sev]").forEach((x) => x.classList.toggle("on", x === b));
+      this._sev = b.dataset.sev; this._loadRec(true);
+    }));
+    this.$("#recmore").onclick = () => this._loadRec(false);
+    this.$("#mclose").onclick = () => this._closePlayer();
+    this.$("#modal").onclick = (e) => { if (e.target.id === "modal") this._closePlayer(); };
     if (this._hass) this._init();
   }
   disconnectedCallback() { clearInterval(this._poll); clearInterval(this._liveT); this._ready = false; }
@@ -103,6 +137,62 @@ class CameraAIPanel extends HTMLElement {
     try { this._d = await this._hass.callWS({ type: "camera_ai/state" }); this._render(); }
     catch (e) { this.$("#sub").textContent = "Lỗi tải: " + e.message; }
   }
+  _tab(t) {
+    this.shadowRoot.querySelectorAll("[data-tab]").forEach((x) => x.classList.toggle("on", x.dataset.tab === t));
+    this.$("#tab-home").hidden = t !== "home"; this.$("#tab-rec").hidden = t !== "rec";
+    if (t === "rec" && !this._rec) this._loadRec(true);
+  }
+  async _loadRec(reset) {
+    if (this._recBusy) return; this._recBusy = true;
+    this._sev = this._sev || "alert";
+    if (reset || !this._rec) this._rec = [];
+    const before = !reset && this._rec.length ? this._rec[this._rec.length - 1].start : undefined;
+    this.$("#recerr").textContent = reset ? "Đang tải…" : "";
+    try {
+      const r = await this._hass.callWS({ type: "camera_ai/reviews", severity: this._sev, limit: 40, ...(before ? { before } : {}) });
+      this._rec = [...this._rec, ...r.items]; this.$("#recerr").textContent = "";
+      this.$("#recmore").hidden = r.items.length < 40;
+    } catch (e) { this.$("#recerr").textContent = "Lỗi: " + e.message; }
+    this._recBusy = false; this._renderRec();
+  }
+  _renderRec() {
+    const items = this._rec || [];
+    if (!items.length) { this.$("#reclist").innerHTML = '<div class="empty">Không có đoạn nào.</div>'; return; }
+    let html = "", lastDay = "";
+    items.forEach((e, i) => {
+      const day = fmtD(e.start);
+      if (day !== lastDay) { html += `<div class="day">${esc(day)}</div>`; lastDay = day; }
+      const dur = e.end ? Math.max(1, Math.round(e.end - e.start)) : null;
+      const durTxt = dur ? (dur >= 60 ? Math.floor(dur / 60) + "p" + (dur % 60) + "s" : dur + "s") : "đang ghi";
+      const who = (e.labels || []).includes("person") ? (e.names.length ? "👤 " + e.names.join(", ") : "Người") : "";
+      const others = (e.labels || []).filter((l) => l !== "person").map((l) => LBL[l] || l).join(", ");
+      html += `<div class="rec" data-i="${i}"><img loading="lazy" src="${esc(e.thumb)}" alt="">
+        <div><div class="t">${fmtT(e.start)} · ${durTxt}</div>
+        <div class="d">${esc([who, others].filter(Boolean).join(" · ") || "Chuyển động")}</div>
+        <span class="badge ${e.severity === "alert" ? "stranger" : ""}">${e.severity === "alert" ? "cảnh báo" : "phát hiện"}</span> <span class="badge">${esc(e.camera_label)}</span></div>
+        <div class="play">${e.clip ? "▶" : "⏺"}</div></div>`;
+    });
+    this.$("#reclist").innerHTML = html;
+    this.$("#reclist").querySelectorAll("[data-i]").forEach((el) => (el.onclick = () => this._play(this._rec[+el.dataset.i])));
+  }
+  async _play(e) {
+    if (!e) return;
+    let clip = e.clip;
+    if (!clip) { // nhật ký Tổng quan: chưa có link ký → xin backend
+      try { clip = (await this._hass.callWS({ type: "camera_ai/clip_url", review_id: e.id })).url; } catch (err) { clip = null; }
+    }
+    if (!clip) { alert("Đoạn này đang ghi, chờ kết thúc rồi xem lại."); return; }
+    const v = this.$("#mvideo");
+    const title = `${e.camera_label || e.camera} · ${fmtD(e.start)} ${fmtT(e.start)}`;
+    this.$("#mtitle").textContent = title + " — đang chuẩn bị clip…";
+    v.onloadeddata = () => (this.$("#mtitle").textContent = title);
+    v.onerror = () => (this.$("#mtitle").textContent = "Không phát được clip (thử Tải về).");
+    v.src = clip; this.$("#mdl").href = clip;
+    const ui = this._d?.links?.frigate; this.$("#mfr").href = ui ? `${ui}/review?id=${encodeURIComponent(e.id)}` : "#";
+    this.$("#modal").hidden = false;
+    v.play().catch(() => {});
+  }
+  _closePlayer() { const v = this.$("#mvideo"); v.pause(); v.removeAttribute("src"); v.load(); this.$("#modal").hidden = true; }
   _renderLive(bust) {
     const st = this._hass?.states?.[`camera.${this._cam}`];
     const img = this.$("#live");
@@ -174,8 +264,10 @@ class CameraAIPanel extends HTMLElement {
         <div class="d">${esc(desc)}</div>${badge} ${person && !e.names?.length ? '<span class="badge stranger">chưa nhận ra</span>' : ""}</div></div>`;
     }
     this.$("#events").innerHTML = html;
-    const ui = d.links?.frigate;
-    this.$("#events").querySelectorAll("[data-r]").forEach((el) => (el.onclick = () => ui && window.open(`${ui}/review?id=${encodeURIComponent(el.dataset.r)}`, "_blank")));
+    this.$("#events").querySelectorAll("[data-r]").forEach((el) => (el.onclick = () => {
+      const e = evs.find((x) => x.id === el.dataset.r);
+      if (e) this._play({ ...e, clip: null });
+    }));
   }
 }
 if (!customElements.get("camera-ai-panel")) customElements.define("camera-ai-panel", CameraAIPanel);

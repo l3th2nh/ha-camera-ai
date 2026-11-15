@@ -10,6 +10,8 @@ Tích hợp HACS quản lý phần **Frigate** trong Home Assistant:
   thông báo) và thời gian chờ giữa 2 lần báo.
 - 🙂 **Đồng bộ khuôn mặt từ Immich**: lấy ảnh mặt rõ nhất của các người **có tên** trong Immich → nạp vào thư viện
   face recognition của Frigate (nút / dịch vụ `camera_ai.sync_faces`).
+- 🎬 **Tab "Xem lại"**: danh sách lượt ghi (cảnh báo / phát hiện) từ Frigate, bấm là **phát ngay trong HA** — clip được
+  chuẩn hoá cho iPhone (âm thanh AAC 44.1kHz, faststart) và đệm trên HA (~1.5GB).
 - 🗂️ **Panel "Camera AI"** trên sidebar: xem trực tiếp, chế độ, nhật ký cảnh báo kèm ảnh (đã báo / lý do không báo),
   thư viện khuôn mặt, liên kết nhanh tới Frigate · Immich · NAS.
 

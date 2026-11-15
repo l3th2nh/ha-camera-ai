@@ -20,6 +20,7 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall, callback
 import homeassistant.helpers.config_validation as cv
 
+from . import clips
 from .const import DOMAIN, MODES, PANEL_PATH
 from .core import CameraAI
 
@@ -27,7 +28,7 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [Platform.SELECT, Platform.BUTTON]
 PANEL_URL = "/camera_ai/panel.js"
-PANEL_VER = "5"  # tăng mỗi lần sửa panel.js (chống cache)
+PANEL_VER = "6"  # tăng mỗi lần sửa panel.js (chống cache)
 
 
 def _rt(hass: HomeAssistant) -> CameraAI | None:
@@ -59,7 +60,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         )
     if not data.get("ws"):
         data["ws"] = True
-        for cmd in (ws_state, ws_set_mode, ws_snooze, ws_sync_faces, ws_test_notify, ws_clear_log):
+        hass.http.register_view(clips.ClipView(hass))
+        for cmd in (ws_state, ws_set_mode, ws_snooze, ws_sync_faces, ws_test_notify, ws_clear_log,
+                    ws_reviews, ws_clip_url):
             websocket_api.async_register_command(hass, cmd)
         _register_services(hass)
 
@@ -175,3 +178,40 @@ async def ws_clear_log(hass, connection, msg) -> None:
         rt.data["events"] = []
         await rt._save()  # noqa: SLF001
     connection.send_result(msg["id"], {"ok": bool(rt)})
+
+
+@websocket_api.websocket_command({
+    vol.Required("type"): "camera_ai/reviews",
+    vol.Optional("before"): vol.Coerce(float),
+    vol.Optional("severity", default="alert"): vol.In(["alert", "detection", "all"]),
+    vol.Optional("limit", default=40): vol.All(int, vol.Range(min=1, max=200)),
+    vol.Optional("camera"): str,
+})
+@websocket_api.async_response
+async def ws_reviews(hass, connection, msg) -> None:
+    """Danh sách lượt ghi (review) từ Frigate + link clip đã ký để phát ngay trong HA."""
+    rt = _rt(hass)
+    if not rt:
+        connection.send_error(msg["id"], "not_ready", "Camera AI chưa sẵn sàng")
+        return
+    try:
+        items = await clips.list_reviews(hass, rt, msg.get("before"), msg["severity"],
+                                         msg["limit"], msg.get("camera"))
+    except Exception as err:  # noqa: BLE001
+        connection.send_error(msg["id"], "frigate_error", f"Không lấy được danh sách từ Frigate: {err}")
+        return
+    connection.send_result(msg["id"], {"items": items})
+
+
+@websocket_api.websocket_command({vol.Required("type"): "camera_ai/clip_url", vol.Required("review_id"): str})
+@callback
+def ws_clip_url(hass, connection, msg) -> None:
+    """Link clip đã ký cho 1 review id (dùng khi bấm mục trong nhật ký Tổng quan)."""
+    from homeassistant.components.http.auth import async_sign_path  # noqa: PLC0415
+
+    rid = msg["review_id"]
+    if not clips.RID_RE.match(rid):
+        connection.send_error(msg["id"], "invalid", "review id không hợp lệ")
+        return
+    connection.send_result(msg["id"], {
+        "url": async_sign_path(hass, f"/api/{DOMAIN}/clip/{rid}.mp4", clips.SIGN_TTL)})
