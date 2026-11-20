@@ -37,10 +37,10 @@ DEFAULT_NIGHT_START = "18:30:00"
 DEFAULT_NIGHT_END = "06:00:00"
 DEFAULT_COOLDOWN = 120
 DEFAULT_FACES_PER_PERSON = 15
-# Tọa độ đo trên khung 1280x720 của camera sân (2026-11-20). Cửa B bị ô tô che chân → chỉ dùng phần trên.
+# Tọa độ đo trên khung 1280x720 của camera sân (2026-11-20). Cửa phụ (ô tô ra vào) bị xe che chân → chỉ dùng phần trên.
 DEFAULT_DOORS = (
-    "Cửa cuốn A | 805,32,805,238,930,350,992,42 | 0-1 | binary_sensor.zigbee_door_contact_cua\n"
-    "Cửa cuốn B | 1142,100,1015,465,1200,640,1280,62 | 0-0.6 |"
+    "Cửa chính | 805,32,805,238,930,350,992,42 | 0-1 | binary_sensor.zigbee_door_contact_cua\n"
+    "Cửa phụ | 1142,100,1015,465,1200,640,1280,62 | 0-0.6 |"
 )
 DEFAULT_DOOR_CAMERA = "san_them"
 

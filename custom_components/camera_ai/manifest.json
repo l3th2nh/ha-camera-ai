@@ -1,7 +1,7 @@
 {
   "domain": "camera_ai",
   "name": "Camera AI (Frigate)",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "documentation": "https://github.com/l3th2nh/ha-camera-ai",
   "issue_tracker": "https://github.com/l3th2nh/ha-camera-ai/issues",
   "dependencies": ["http", "websocket_api", "frontend", "panel_custom", "mqtt"],

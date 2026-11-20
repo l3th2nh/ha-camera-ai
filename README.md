@@ -49,8 +49,8 @@ Tích hợp HACS quản lý phần **Frigate** trong Home Assistant:
 *Cấu hình* → ô **Cửa cuốn**, mỗi dòng 1 cửa:
 ```
 Tên | x1,y1,x2,y2,x3,y3,x4,y4 | dải hàng | cảm biến (tùy chọn)
-Cửa cuốn A | 805,32,805,238,930,350,992,42 | 0-1 | binary_sensor.zigbee_door_contact_cua
-Cửa cuốn B | 1142,100,1015,465,1200,640,1280,62 | 0-0.6 |
+Cửa chính | 805,32,805,238,930,350,992,42 | 0-1 | binary_sensor.zigbee_door_contact_cua
+Cửa phụ | 1142,100,1015,465,1200,640,1280,62 | 0-0.6 |
 ```
 - Toạ độ trên khung **1280×720**, thứ tự góc: trên-trái, dưới-trái, dưới-phải, trên-phải của cánh cửa.
 - *Dải hàng* `0-0.6` = chỉ dùng 60% phía trên (khi chân cửa hay bị xe che).
