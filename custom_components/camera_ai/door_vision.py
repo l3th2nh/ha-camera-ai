@@ -147,6 +147,9 @@ class DoorVision:
         except (aiohttp.ClientError, asyncio.TimeoutError) as err:
             self.last_error = f"Không lấy được ảnh: {err}"
             return None
+        except RuntimeError as err:  # "Session is closed" khi HA đang tắt — vô hại
+            self.last_error = f"HA đang dừng: {err}"
+            return None
 
     async def _tick(self) -> None:
         try:
