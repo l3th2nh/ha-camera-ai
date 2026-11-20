@@ -17,6 +17,9 @@ CONF_COOLDOWN = "cooldown"                # giây giữa 2 thông báo của cù
 CONF_CAMERA_NAMES = "camera_names"        # "san_them=Sân - Thềm, cong=Cổng"
 CONF_FACES_PER_PERSON = "faces_per_person"
 CONF_KNOWN_QUIET = "known_quiet"          # người quen: gửi thông báo im lặng
+CONF_DOORS = "doors"                      # cửa cuốn nhận diện bằng hình (mỗi dòng 1 cửa)
+CONF_DOOR_CAMERA = "door_camera"          # camera Frigate nhìn thấy các cửa
+CONF_DOOR_NOTIFY = "door_notify"          # gửi thông báo khi cửa (camera) đóng/mở
 
 DEFAULT_FRIGATE_URL = "http://192.168.0.195:5000"
 DEFAULT_FRIGATE_UI = "https://192.168.0.195:8971"
@@ -34,6 +37,12 @@ DEFAULT_NIGHT_START = "18:30:00"
 DEFAULT_NIGHT_END = "06:00:00"
 DEFAULT_COOLDOWN = 120
 DEFAULT_FACES_PER_PERSON = 15
+# Tọa độ đo trên khung 1280x720 của camera sân (2026-11-20). Cửa B bị ô tô che chân → chỉ dùng phần trên.
+DEFAULT_DOORS = (
+    "Cửa cuốn A | 805,32,805,238,930,350,992,42 | 0-1 | binary_sensor.zigbee_door_contact_cua\n"
+    "Cửa cuốn B | 1142,100,1015,465,1200,640,1280,62 | 0-0.6 |"
+)
+DEFAULT_DOOR_CAMERA = "san_them"
 
 # --- chế độ thông báo (select entity) ---
 MODE_ALWAYS = "Mọi lúc"

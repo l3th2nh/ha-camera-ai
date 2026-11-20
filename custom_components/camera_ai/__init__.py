@@ -26,9 +26,9 @@ from .core import CameraAI
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.SELECT, Platform.BUTTON]
+PLATFORMS = [Platform.SELECT, Platform.BUTTON, Platform.BINARY_SENSOR, Platform.SENSOR]
 PANEL_URL = "/camera_ai/panel.js"
-PANEL_VER = "6"  # tăng mỗi lần sửa panel.js (chống cache)
+PANEL_VER = "7"  # tăng mỗi lần sửa panel.js (chống cache)
 
 
 def _rt(hass: HomeAssistant) -> CameraAI | None:
@@ -62,7 +62,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         data["ws"] = True
         hass.http.register_view(clips.ClipView(hass))
         for cmd in (ws_state, ws_set_mode, ws_snooze, ws_sync_faces, ws_test_notify, ws_clear_log,
-                    ws_reviews, ws_clip_url):
+                    ws_reviews, ws_clip_url, ws_door_reset):
             websocket_api.async_register_command(hass, cmd)
         _register_services(hass)
 
@@ -215,3 +215,19 @@ def ws_clip_url(hass, connection, msg) -> None:
         return
     connection.send_result(msg["id"], {
         "url": async_sign_path(hass, f"/api/{DOMAIN}/clip/{rid}.mp4", clips.SIGN_TTL)})
+
+
+@websocket_api.websocket_command({vol.Required("type"): "camera_ai/door_reset", vol.Optional("key"): str})
+@websocket_api.async_response
+async def ws_door_reset(hass, connection, msg) -> None:
+    """Người dùng xác nhận cửa đang ĐÓNG → lấy khung hiện tại làm mẫu."""
+    rt = _rt(hass)
+    if not rt or not rt.vision:
+        connection.send_error(msg["id"], "not_ready", "Chưa cấu hình cửa cuốn")
+        return
+    try:
+        await rt.vision.async_reset_reference(msg.get("key"))
+    except RuntimeError as err:
+        connection.send_error(msg["id"], "frigate_error", str(err))
+        return
+    connection.send_result(msg["id"], {"ok": True})

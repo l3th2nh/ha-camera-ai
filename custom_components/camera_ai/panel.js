@@ -65,6 +65,16 @@ h2{font-size:14px;margin:0 0 10px;color:var(--muted);font-weight:600;letter-spac
 .modal .mt{color:var(--text);font-size:14px;margin:10px 0;text-align:center}
 .modal .row{justify-content:center}
 .modal .x{position:absolute;top:calc(env(safe-area-inset-top) + 12px);right:14px;font-size:26px;color:#fff;cursor:pointer;background:none;border:0}
+.live svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.door{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+.door:first-of-type{border-top:0}
+.door .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:22px;flex:none;background:var(--panel-2)}
+.door.open .ic{background:color-mix(in srgb,var(--warn) 18%,var(--panel-2))} .door.closed .ic{background:color-mix(in srgb,var(--ok) 14%,var(--panel-2))}
+.door .st{font-size:15px;font-weight:700} .door.open .st{color:var(--warn)} .door.closed .st{color:var(--ok)}
+.door .meta{font-size:12px;color:var(--faint);margin-top:2px}
+.door .btn{margin-left:auto;padding:6px 10px;font-size:12px}
+.bar2{height:6px;border-radius:4px;background:var(--panel-2);overflow:hidden;margin-top:6px;width:160px}
+.bar2 i{display:block;height:100%;background:var(--warn)}
 </style>`;
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -84,7 +94,8 @@ class CameraAIPanel extends HTMLElement {
       <div class="top"><div class="menu" id="menu">☰</div><div><h1>Camera AI</h1><div class="sub" id="sub">Đang tải…</div></div></div>
       <div class="tabs"><button class="tab on" data-tab="home">Tổng quan</button><button class="tab" data-tab="rec">🎬 Xem lại</button></div>
       <div id="tab-home">
-      <div class="card"><div class="live"><img id="live" alt=""><div class="tag" id="camtag"></div></div><div class="camsel" id="camsel"></div></div>
+      <div class="card"><div class="live"><img id="live" alt=""><svg id="doorsvg" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet"></svg><div class="tag" id="camtag"></div></div><div class="camsel" id="camsel"></div></div>
+      <div class="card" id="doorcard" hidden><h2>Cửa cuốn (nhận diện bằng camera)</h2><div id="doors"></div><div class="err" id="doorerr"></div></div>
       <div class="card"><h2>Chế độ thông báo</h2><div class="chips" id="modes"></div><div class="status" id="status"></div>
         <div class="row"><button class="btn" data-snz="60">🔕 Tạm tắt 1 giờ</button><button class="btn" data-snz="240">🔕 4 giờ</button>
         <button class="btn" data-snz="0">🔔 Bật lại</button><button class="btn" id="test">🧪 Thông báo thử</button></div>
@@ -193,6 +204,35 @@ class CameraAIPanel extends HTMLElement {
     v.play().catch(() => {});
   }
   _closePlayer() { const v = this.$("#mvideo"); v.pause(); v.removeAttribute("src"); v.load(); this.$("#modal").hidden = true; }
+  _renderDoors(d) {
+    const doors = d.doors || [];
+    this.$("#doorcard").hidden = !doors.length;
+    this.$("#doorerr").textContent = d.door_error ? "Lỗi lấy ảnh: " + d.door_error : "";
+    const svg = this.$("#doorsvg");
+    const showSvg = doors.length && this._cam === (d.door_camera || "san_them");
+    svg.innerHTML = showSvg ? doors.map((x) => {
+      const q = x.quad, pts = [[q[0], q[1]], [q[6], q[7]], [q[4], q[5]], [q[2], q[3]]].map((p) => p.join(",")).join(" ");
+      const col = x.is_open ? "#ffb24c" : x.is_open === false ? "#5fd29a" : "#9aa4b6";
+      return `<polygon points="${pts}" fill="${col}22" stroke="${col}" stroke-width="4"/>` +
+        `<text x="${q[0] + 8}" y="${q[1] + 34}" fill="${col}" font-size="30" font-weight="700" style="paint-order:stroke;stroke:#000;stroke-width:5px">${esc(x.name)}${x.is_open ? " " + x.pct + "%" : ""}</text>`;
+    }).join("") : "";
+    const sensorTxt = (x) => !x.sensor ? "" : ` · cảm biến: ${x.sensor_state === "on" ? "MỞ" : x.sensor_state === "off" ? "đóng" : esc(x.sensor_state || "?")}`;
+    this.$("#doors").innerHTML = doors.map((x) => {
+      const cls = x.is_open ? "open" : x.is_open === false ? "closed" : "";
+      const st = x.is_open ? `ĐANG MỞ ~${x.pct}%` : x.is_open === false ? "ĐÃ ĐÓNG" : "Chưa xác định";
+      const since = x.last_change ? new Date(x.last_change).toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }) : "—";
+      return `<div class="door ${cls}"><div class="ic">${x.is_open ? "🔓" : "🔒"}</div>
+        <div><div class="st">${esc(x.name)}: ${st}</div>
+        <div class="meta">từ ${since} · ảnh ${x.mode === "night" ? "đêm (IR)" : "ngày"} · mẫu: ${x.has_ref.join("/") || "chưa có"}${sensorTxt(x)}</div>
+        ${x.is_open ? `<div class="bar2"><i style="width:${Math.max(4, x.pct)}%"></i></div>` : ""}</div>
+        <button class="btn" data-dr="${esc(x.key)}" title="Bấm khi cửa đang ĐÓNG để lấy ảnh hiện tại làm mẫu">Đặt lại mẫu</button></div>`;
+    }).join("");
+    this.$("#doors").querySelectorAll("[data-dr]").forEach((b) => (b.onclick = async () => {
+      if (!confirm("Xác nhận cửa này ĐANG ĐÓNG hoàn toàn? Ảnh hiện tại sẽ được dùng làm mẫu.")) return;
+      try { await this._hass.callWS({ type: "camera_ai/door_reset", key: b.dataset.dr }); this._load(); }
+      catch (e) { alert("Lỗi: " + e.message); }
+    }));
+  }
   _renderLive(bust) {
     const st = this._hass?.states?.[`camera.${this._cam}`];
     const img = this.$("#live");
@@ -245,6 +285,7 @@ class CameraAIPanel extends HTMLElement {
     this.$("#camsel").innerHTML = cams.length > 1 ? cams.map((c) => `<button class="chip ${c === this._cam ? "on" : ""}" data-c="${esc(c)}">${esc(c)}</button>`).join("") : "";
     this.$("#camsel").querySelectorAll("[data-c]").forEach((b) => (b.onclick = () => { this._cam = b.dataset.c; this.$("#live").src = ""; this._render(); this._renderLive(true); }));
     this._renderEvents(d);
+    this._renderDoors(d);
   }
   _renderEvents(d) {
     const evs = d.events || [];
@@ -253,6 +294,11 @@ class CameraAIPanel extends HTMLElement {
     for (const e of evs) {
       const day = e.start ? fmtD(e.start) : "";
       if (day !== lastDay) { html += `<div class="day">${esc(day)}</div>`; lastDay = day; }
+      if (e.type === "door") {
+        html += `<div class="ev"><img alt="" style="display:grid;place-items:center"><div><div class="t">${e.start ? fmtT(e.start) : ""} · camera</div>
+          <div class="d">${e.door_open ? "🔓" : "🔒"} ${esc(e.door)} ${e.door_open ? "MỞ" : "ĐÓNG"}</div>${e.notified ? '<span class="badge ok">đã báo</span>' : `<span class="badge">${esc(e.reason || "không báo")}</span>`}</div></div>`;
+        continue;
+      }
       const person = (e.labels || []).includes("person");
       const who = person ? (e.names?.length ? "👤 " + e.names.join(", ") : "⚠️ Người lạ") : "";
       const others = (e.labels || []).filter((l) => l !== "person").map((l) => LBL[l] || l).join(", ");

@@ -42,7 +42,10 @@
           "known_quiet": "Người quen: thông báo im lặng",
           "camera_names": "Tên hiển thị camera (vd san_them=Sân - Thềm)",
           "faces_per_person": "Số ảnh mặt mỗi người lấy từ Immich",
-          "immich_app": "Immich — mở APP trên điện thoại (để trống = luôn mở web)"
+          "immich_app": "Immich — mở APP trên điện thoại (để trống = luôn mở web)",
+          "door_notify": "Thông báo khi cửa cuốn (camera) đóng/mở",
+          "door_camera": "Camera nhìn thấy các cửa cuốn",
+          "doors": "Cửa cuốn — mỗi dòng: Tên | 8 toạ độ (1280x720) | dải hàng 0-1 | cảm biến (tùy chọn)"
         }
       }
     }

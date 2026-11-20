@@ -15,6 +15,11 @@ Tích hợp HACS quản lý phần **Frigate** trong Home Assistant:
 - 🗂️ **Panel "Camera AI"** trên sidebar: xem trực tiếp, chế độ, nhật ký cảnh báo kèm ảnh (đã báo / lý do không báo),
   thư viện khuôn mặt, liên kết nhanh tới Frigate · Immich · NAS.
 
+- 🚪 **Cửa cuốn đóng/mở bằng camera** (không cần cảm biến): mỗi cửa là 1 vùng tứ giác trên ảnh camera. Tích hợp
+  so cấu trúc ảnh với **kho mẫu "cửa đóng"** tự cập nhật theo ánh sáng (ngày/đêm hồng ngoại) → `binary_sensor`
+  (garage_door) + `sensor` % mở + sự kiện `camera_ai_door` cho automation + thông báo (tùy chọn). Panel vẽ viền cửa
+  lên ảnh trực tiếp và có nút *Đặt lại mẫu* (bấm khi cửa đang đóng).
+
 ## Yêu cầu
 - Frigate ≥ 0.14 (đã thử 0.18) có MQTT, bật `face_recognition` nếu muốn gắn tên.
 - Tích hợp **Frigate** (HACS `blakeblackshear/frigate-hass-integration`) — dùng proxy ảnh thông báo của nó.
@@ -39,3 +44,14 @@ Tích hợp HACS quản lý phần **Frigate** trong Home Assistant:
 - Ảnh trong Immich là ảnh điện thoại (chính diện, đủ sáng) — camera an ninh nhìn từ trên xuống / hồng ngoại ban đêm
   khác nhiều. Nên bổ sung vài ảnh mặt từ chính camera qua tab **Faces → Train** của Frigate.
 - Không lưu mật khẩu trong repo; API key Immich nằm trong config entry của HA.
+
+## Cửa cuốn bằng camera — cấu hình
+*Cấu hình* → ô **Cửa cuốn**, mỗi dòng 1 cửa:
+```
+Tên | x1,y1,x2,y2,x3,y3,x4,y4 | dải hàng | cảm biến (tùy chọn)
+Cửa cuốn A | 805,32,805,238,930,350,992,42 | 0-1 | binary_sensor.zigbee_door_contact_cua
+Cửa cuốn B | 1142,100,1015,465,1200,640,1280,62 | 0-0.6 |
+```
+- Toạ độ trên khung **1280×720**, thứ tự góc: trên-trái, dưới-trái, dưới-phải, trên-phải của cánh cửa.
+- *Dải hàng* `0-0.6` = chỉ dùng 60% phía trên (khi chân cửa hay bị xe che).
+- Sự kiện cho automation: `camera_ai_door` với `door`, `open` (true/false), `frac`.

@@ -27,7 +27,9 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from . import immich_faces
+from .door_vision import DoorConf, DoorVision, parse_doors
 from .const import (
+    CONF_DOORS, CONF_DOOR_CAMERA, CONF_DOOR_NOTIFY, DEFAULT_DOORS, DEFAULT_DOOR_CAMERA,
     ACTION_SNOOZE, CONF_CAMERA_NAMES, CONF_COOLDOWN, CONF_FACES_PER_PERSON, CONF_FRIGATE_UI,
     CONF_FRIGATE_URL, CONF_IMMICH_KEY, CONF_IMMICH_APP, CONF_IMMICH_UI, CONF_IMMICH_URL, CONF_KNOWN_QUIET,
     CONF_LABELS, CONF_NAS_LINK, CONF_NIGHT_END, CONF_NIGHT_START, CONF_NOTIFY,
@@ -91,6 +93,10 @@ class CameraAI:
         self.cooldown = float(conf.get(CONF_COOLDOWN, DEFAULT_COOLDOWN) or 0)
         self.faces_per_person = int(conf.get(CONF_FACES_PER_PERSON, DEFAULT_FACES_PER_PERSON) or 15)
         self.known_quiet = bool(conf.get(CONF_KNOWN_QUIET, True))
+        self.door_confs = parse_doors(conf.get(CONF_DOORS, DEFAULT_DOORS))
+        self.door_camera = conf.get(CONF_DOOR_CAMERA) or DEFAULT_DOOR_CAMERA
+        self.door_notify = bool(conf.get(CONF_DOOR_NOTIFY, True))
+        self.vision: DoorVision | None = None
         self.camera_names = self._parse_camera_names(conf.get(CONF_CAMERA_NAMES) or "")
 
         self.store = Store(hass, 1, f"{DOMAIN}.log")
@@ -115,6 +121,10 @@ class CameraAI:
         self._unsubs.append(
             self.hass.bus.async_listen("mobile_app_notification_action", self._on_action)
         )
+        if self.door_confs:
+            self.vision = DoorVision(self.hass, self, self.door_camera, self.door_confs, self._on_door)
+            await self.vision.async_start()
+            self._unsubs.append(self.vision.async_stop)
         _LOGGER.info("Camera AI: nghe %s, chế độ '%s', báo qua '%s'",
                      TOPIC, self.data["mode"], self.notify_service)
 
@@ -123,6 +133,31 @@ class CameraAI:
         for u in self._unsubs:
             u()
         self._unsubs.clear()
+
+    async def _on_door(self, d: DoorConf, st) -> None:
+        """Cửa (theo camera) vừa đổi trạng thái → nhật ký + sự kiện HA + (tùy chọn) thông báo."""
+        now = dt_util.utcnow()
+        entry = {
+            "id": f"door-{d.key}-{int(now.timestamp())}", "type": "door", "camera": self.door_camera,
+            "camera_label": d.name, "start": now.timestamp(), "end": now.timestamp(),
+            "labels": [], "names": [], "event": None, "door": d.name, "door_open": st.is_open,
+            "notified": False, "reason": "",
+        }
+        self.hass.bus.async_fire("camera_ai_door", {
+            "door": d.name, "key": d.key, "open": st.is_open, "frac": round(st.frac, 3)})
+        if self.door_notify and not self.snooze_until:
+            icon = "🔓" if st.is_open else "🔒"
+            verb = "vừa MỞ" if st.is_open else "đã ĐÓNG"
+            res = await self.send(f"📷 {d.name}", f"{icon} {d.name} {verb} lúc {dt_util.now():%H:%M} (nhận diện bằng camera)",
+                                  {"tag": f"camera_ai_{d.key}", "url": f"/{PANEL_PATH}", "clickAction": f"/{PANEL_PATH}",
+                                   "image": f"/api/camera_proxy/camera.{self.door_camera}"})
+            entry["notified"] = bool(res.get("ok"))
+        else:
+            entry["reason"] = "tắt thông báo cửa" if not self.door_notify else "đang tạm tắt"
+        self.data["events"].insert(0, entry)
+        del self.data["events"][MAX_LOG:]
+        await self._save()
+        self._changed()
 
     def add_listener(self, cb: Callable[[], None]) -> Callable[[], None]:
         self._listeners.append(cb)
@@ -415,4 +450,7 @@ class CameraAI:
             "sync_progress": self.sync_progress[-8:],
             "faces_per_person": self.faces_per_person,
             "immich_people": self.data.get("immich_people", {}),
+            "doors": self.vision.snapshot() if self.vision else [],
+            "door_camera": self.door_camera,
+            "door_error": self.vision.last_error if self.vision else None,
         }
