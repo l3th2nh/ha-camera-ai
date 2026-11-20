@@ -149,7 +149,8 @@ class CameraAI:
             icon = "🔓" if st.is_open else "🔒"
             verb = "vừa MỞ" if st.is_open else "đã ĐÓNG"
             res = await self.send(f"📷 {d.name}", f"{icon} {d.name} {verb} lúc {dt_util.now():%H:%M} (nhận diện bằng camera)",
-                                  {"tag": f"camera_ai_{d.key}", "url": f"/{PANEL_PATH}", "clickAction": f"/{PANEL_PATH}",
+                                  # tag RIÊNG mỗi lượt: chung tag thì iPhone cho tin "đóng" ĐÈ MẤT tin "mở"
+                                  {"tag": f"camera_ai_{d.key}_{int(now.timestamp())}", "url": f"/{PANEL_PATH}", "clickAction": f"/{PANEL_PATH}",
                                    "image": f"/api/camera_proxy/camera.{self.door_camera}"})
             entry["notified"] = bool(res.get("ok"))
         else:
