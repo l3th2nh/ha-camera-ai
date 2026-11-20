@@ -85,6 +85,10 @@ class DoorVision:
         saved = await self._store.async_load() or {}
         for d in self.doors:
             sd = saved.get(d.key) or {}
+            # Viền cửa (hoặc dải hàng) đã đổi → kho mẫu cũ chụp theo vùng khác, giữ lại sẽ báo nhầm → bỏ
+            if sd and (sd.get("quad") != list(d.quad) or sd.get("band") != list(d.band)):
+                _LOGGER.info("Camera AI: viền %s đã đổi — xoá kho mẫu cũ, học lại từ đầu", d.name)
+                sd = {"last_change": sd.get("last_change")}
             self.trackers[d.key].load(sd)
             self.last_change[d.key] = sd.get("last_change")
         self._unsub = async_track_time_interval(self.hass, self._tick_cb, timedelta(seconds=INTERVAL))
@@ -183,7 +187,8 @@ class DoorVision:
         if not force and now - self._last_save < 600:
             return
         self._last_save = now
-        data = {d.key: {**self.trackers[d.key].dump(), "last_change": self.last_change[d.key]} for d in self.doors}
+        data = {d.key: {**self.trackers[d.key].dump(), "last_change": self.last_change[d.key],
+                        "quad": list(d.quad), "band": list(d.band)} for d in self.doors}
         await self._store.async_save(data)
 
     # ---------- cho panel ----------
